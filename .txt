@@ -1,0 +1,25 @@
+create table Rooms (
+    id int primary key,
+    type varchar(255) not null, 
+    amenities varchar(255),
+    price int not null, 
+    availability varchar(50) not null );
+
+{
+    "username": "Raniel",
+    "email": "raniel@gmail.com",
+    "phone_number": "7083296855",
+    "password": "Spintly@2024"
+}
+
+{
+    "email": "raniel@gmail.com",
+    "password": "Spintly@2024"
+}
+
+{
+    "username": "Rienzi",
+    "email": "rienzi@gmail.com",
+    "phone_number": "771905246",
+    "password": "yuasdda@12dvs345"
+}
