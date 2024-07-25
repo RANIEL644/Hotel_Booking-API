@@ -101,7 +101,7 @@ func GetRooms(db *sql.DB, filters map[string]string) ([]Room, error) {
 
 	query += ";"
 
-	// log.Printf("Executing query: %s with args: %v", query, args)
+	log.Printf("Executing query: %s with args: %v", query, args)
 
 	// Execute query
 	rows, err := db.Query(query, args...)
@@ -131,7 +131,11 @@ func GetRooms(db *sql.DB, filters map[string]string) ([]Room, error) {
 
 		// 	room.Amenities = strings.Split(amenities, ", ")
 		// }
+		// fmt.Println("Rooms:", room)
+
 		rooms = append(rooms, room)
+
+		// log.Println("Roomscheck:", rooms)
 	}
 
 	if err = rows.Err(); err != nil {

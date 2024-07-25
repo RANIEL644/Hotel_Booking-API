@@ -13,6 +13,8 @@ import (
 
 	"database/sql"
 
+	"strings"
+
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
@@ -101,14 +103,29 @@ func LoginUser(c *gin.Context) {
 
 }
 
-// func CreateUser(db *sql.DB, user User) error {
-// 	apiKey, err := utils.GenerateAPIKey()
-// 	if err != nil {
-// 		return err
-// 	}
+func AuthMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		authHeader := c.GetHeader("Authorization")
+		if authHeader == "" {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Authorization header required"})
+			c.Abort()
+			return
+		}
 
-// 	user.APIKey = apiKey
-// 	// Insert user into the database
-// 	_, err = db.Exec(`INSERT INTO users (name, email, api_key) VALUES (?, ?, ?)`, user.Name, user.Email, user.APIKey)
-// 	return err
-// }
+		tokenString := strings.TrimPrefix(authHeader, "Bearer ")
+		claims := &jwt.StandardClaims{}
+
+		token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
+			return jwtKey, nil
+		})
+
+		if err != nil || !token.Valid {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid token"})
+			c.Abort()
+			return
+		}
+
+		c.Set("userEmail", claims.Subject)
+		c.Next()
+	}
+}

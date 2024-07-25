@@ -26,7 +26,7 @@ func GetRooms(c *gin.Context) {
 	}
 	// log.Println("check1")
 
-	rooms, err := models.GetRooms(config.DB, filters)
+	room, err := models.GetRooms(config.DB, filters)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -34,7 +34,7 @@ func GetRooms(c *gin.Context) {
 
 	// log.Println(rooms)
 
-	c.JSON(http.StatusOK, rooms)
+	c.JSON(http.StatusOK, room)
 }
 
 func AddRoom(c *gin.Context) {

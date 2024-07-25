@@ -42,17 +42,7 @@ func main() {
 		fmt.Printf("%+v\n", room)
 	}
 
+	routes.ProtectedRoutes(router)
+
 	router.Run(":8080")
 }
-
-// func CreateUser(db *sql.DB, user User) error {
-// 	apiKey, err := utils.GenerateAPIKey()
-// 	if err != nil {
-// 		return err
-// 	}
-
-// 	user.APIKey = apiKey
-// 	// Insert user into the database
-// 	_, err = db.Exec(`INSERT INTO users (name, email, api_key) VALUES (?, ?, ?)`, user.Name, user.Email, user.APIKey)
-// 	return err
-// }

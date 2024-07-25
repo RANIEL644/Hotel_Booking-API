@@ -1,7 +1,11 @@
 package models
 
 import (
+	// "Desktop/Projects/Hotel_Booking/config"
+	// "database/sql"
+	// "net/http"
 	"time"
+	// "github.com/gin-gonic/gin"
 )
 
 type Guest struct {
@@ -18,3 +22,24 @@ type Guest struct {
 	Updated_at    time.Time `json:"updated_at,omitempty"`
 	User_id       string    `json:"user_id,omitempty"`
 }
+
+// func FetchGuestDetails(c *gin.Context) (string, error) {
+
+// 	query := `select guest_id from guest where email = ? and guest_name = ?`
+// 	var guestid string
+
+// 	var GUEST Guest
+
+// 	err := config.DB.QueryRow(query, GUEST.Email, GUEST.Guestname).Scan(&guestid)
+// 	if err != nil {
+// 		if err == sql.ErrNoRows {
+// 			c.JSON(http.StatusInternalServerError, gin.H{"error": "No guest found with the provided email and username"})
+// 			return "", err
+// 		} else {
+// 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+// 			return "", err
+// 		}
+
+// 	}
+// 	return guestid, nil
+// }
