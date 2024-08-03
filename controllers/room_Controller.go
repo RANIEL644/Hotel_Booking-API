@@ -6,16 +6,12 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-
 	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
 
 func GetRooms(c *gin.Context) {
-
-	// db := config.DB
-
 	filters := map[string]string{
 		"availability": c.Query("availability"),
 		"min_price":    c.Query("min_price"),
@@ -24,17 +20,38 @@ func GetRooms(c *gin.Context) {
 		"size":         c.Query("size"),
 		"amenities":    c.Query("amenities"),
 	}
-	// log.Println("check1")
-
 	room, err := models.GetRooms(config.DB, filters)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	// log.Println(rooms)
+	c.JSON(http.StatusOK, room)
+}
+
+func GetRoom(c *gin.Context) {
+
+	id := c.Param("room_id")
+
+	roomID, err := strconv.Atoi(id)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"Error": fmt.Sprintf("Invalid id: %s", id)})
+		return
+	}
+
+	room, err := models.GetRoom(config.DB, roomID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	if room == nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Room not found"})
+		return
+	}
 
 	c.JSON(http.StatusOK, room)
+
 }
 
 func AddRoom(c *gin.Context) {
@@ -115,51 +132,3 @@ func EditRoom(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"message": "Room updated successfully"})
 }
-
-func GetRoom(c *gin.Context) {
-
-	id := c.Param("room_id")
-
-	roomID, err := strconv.Atoi(id)
-	if err != nil {
-
-		c.JSON(http.StatusBadRequest, gin.H{"Error": fmt.Sprintf("Invalid id: %s", id)})
-		// return
-	}
-
-	room, err := models.GetRoom(config.DB, roomID)
-
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-	if room == nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Room not found"})
-		return
-	}
-
-	c.JSON(http.StatusOK, room)
-
-}
-
-// func EditRoom(c *gin.Context){
-
-// 		roomid :=c.Param("room_id")
-
-// 		id, err, := strconv.Atoi(roomid)
-// 		if err != nil {
-// 			c.JSON(http.StatusBadRequest, gin.H{"Error" : "invalidID", "ID": id})
-
-// 		return
-// 		}
-
-// }
-
-// var EdRoom Rooms
-// if err := c.ShouldBindJSON(&EdRoom); err != nil {
-
-// 	c.JSON(http.StatusBadRequest, gin.H{"Error": "Failed to update"})
-// 	return
-// }
-
-// query := "update room"

@@ -12,7 +12,6 @@ import (
 	"strings"
 
 	_ "github.com/gin-gonic/gin"
-	// "Desktop/Projects/Hotel_Booking/config"
 )
 
 type Room struct {
@@ -93,7 +92,6 @@ func GetRooms(db *sql.DB, filters map[string]string) ([]Room, error) {
 
 	offset := (page - 1) * pageSize
 
-	// Add GROUP BY clause
 	query += " GROUP BY r.room_id, rt.type_name, r.room_description, r.price, r.availability"
 
 	query += " LIMIT ? OFFSET ?"
@@ -103,7 +101,6 @@ func GetRooms(db *sql.DB, filters map[string]string) ([]Room, error) {
 
 	log.Printf("Executing query: %s with args: %v", query, args)
 
-	// Execute query
 	rows, err := db.Query(query, args...)
 	if err != nil {
 		log.Println("Error executing query:", err)
@@ -111,7 +108,6 @@ func GetRooms(db *sql.DB, filters map[string]string) ([]Room, error) {
 	}
 	defer rows.Close()
 
-	// Parse results
 	var rooms []Room
 	for rows.Next() {
 		var room Room
@@ -126,23 +122,13 @@ func GetRooms(db *sql.DB, filters map[string]string) ([]Room, error) {
 			return nil, err
 		}
 
-		// Split the amenities string into a slice of strings
-		// if amenities != "[]" {
-
-		// 	room.Amenities = strings.Split(amenities, ", ")
-		// }
-		// fmt.Println("Rooms:", room)
-
 		rooms = append(rooms, room)
 
-		// log.Println("Roomscheck:", rooms)
 	}
 
 	if err = rows.Err(); err != nil {
 		return nil, err
 	}
-
-	// log.Println("models check1:", rooms)
 
 	return rooms, nil
 }
@@ -313,17 +299,6 @@ func UpdateRoom(db *sql.DB, room Room) error {
 		}
 
 	}
-	// Update room details
-	// query := `UPDATE rooms SET room_type_id = ?, room_description = ?, price = ?, availability = ? WHERE room_id = ?`
-	// _, err = tx.Exec(query, room.Room_Type, room.Room_Description, room.Price, room.Available, room.Room_ID)
-	// if err != nil {
-	// 	tx.Rollback()
-	// 	return err
-	// }
-
-	// Delete existing amenities for the room
-
-	// Insert new amenities for the room
 
 	// Commit the transaction
 	if err := tx.Commit(); err != nil {

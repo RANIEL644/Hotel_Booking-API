@@ -2,6 +2,9 @@ package models
 
 import (
 	"Desktop/Projects/Hotel_Booking/config"
+	// "Desktop/Projects/Hotel_Booking/controllers"
+
+	// "Desktop/Projects/Hotel_Booking/controllers"
 	"time"
 
 	// "github.com/gin-gonic/gin"
@@ -16,8 +19,8 @@ type Booking struct {
 	To_Date        string    `json:"to_date"`
 	Adults         int       `json:"adults"`
 	Children       int       `json:"children"`
-	Check_in_Time  string    `json:"checkin_time"`
-	Check_out_Time string    `json:"checkout_time"`
+	Check_in_Time  string    `json:"check-in time"`
+	Check_out_Time string    `json:"check-out time"`
 	TotalPrice     float64   `json:"total_price"`
 	Status         string    `json:"status" gorm:"default:'Confirmed'"`
 	Booking_Date   time.Time `json:"booking_date"`
@@ -67,6 +70,19 @@ func FetchRoomPrice(roomID int) (float64, error) {
 	fmt.Println("Fetched price:", price)
 
 	return price, nil
+}
+
+func GetBooking(booking_id int) (Booking, error) {
+	var booking Booking
+
+	query := "select * from bookings where booking_id = ?"
+	row := config.DB.QueryRow(query, booking_id)
+	if err := row.Scan(&booking.Booking_ID, &booking.Room_ID, &booking.Guest_ID, &booking.Adults, &booking.Children, &booking.To_Date, &booking.From_Date, &booking.Check_in_Time, &booking.Check_out_Time, &booking.TotalPrice, &booking.Status, &booking.Booking_Date); err != nil {
+		fmt.Println("failed to scan to row")
+
+		return booking, err
+	}
+	return booking, nil
 }
 
 // func UpdateRoomAvailability(roomID int, isAvailable bool) error {

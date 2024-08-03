@@ -16,6 +16,8 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// var book models.Booking
+
 func BookRoom(c *gin.Context) {
 
 	roomID := c.Param("room_id")
@@ -37,13 +39,17 @@ func BookRoom(c *gin.Context) {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Authorization token is required"})
 		return
 	}
+
+	fmt.Println(tokenString)
 	////////////////////////////
 	guestID, err := Utils.ExtractGuestIDFromToken(tokenString)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid token", "M": err.Error()})
 		return
-
 	}
+
+	fmt.Println("Guest ID", guestID)
+
 	booking.Guest_ID = string(guestID)
 	fmt.Println(booking.Guest_ID)
 	booking.Room_ID, _ = strconv.Atoi(roomID)
@@ -67,6 +73,7 @@ func BookRoom(c *gin.Context) {
 		return
 	}
 
+	fmt.Println(booking.Check_in_Time)
 	checkinTime, err := time.Parse("15:04:05", booking.Check_in_Time)
 	if err != nil {
 		fmt.Println("error parsing time", err)
@@ -101,45 +108,104 @@ func BookRoom(c *gin.Context) {
 		return
 	}
 
-	guestid, err := FetchGuestID(c)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch GuestID"})
-	}
+	// guestid, err := models.IDFetch(c)
+	// if err != nil {
+	// 	c.JSON(http.StatusUnauthorized, gin.H{"error": "Failed to fetch GuestID"})
+	// 	return
+	// }
 
-	bookingID, err := models.BookRoom(&booking, guestid)
+	bookingID, err := models.BookRoom(&booking, booking.Guest_ID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	response := gin.H{
-		"booking_id":     bookingID,
-		"room_id":        roomID,
-		"guest_id":       guestid,
-		"adults":         booking.Adults,
-		"children":       booking.Children,
-		"check-in_date":  fromDate.Format("2006-01-02"),
-		"check-out_date": toDate.Format("2006-01-02"),
-		"check-in_time":  checkinTime,
-		"check-out_time": checkoutTime,
-		"total_price":    booking.TotalPrice,
-		"status":         "Confirmed",
+	response := gin.H{"Type": "success",
+		"message": gin.H{
+			"booking_id":     bookingID,
+			"room_id":        roomID,
+			"guest_id":       booking.Guest_ID,
+			"adults":         booking.Adults,
+			"children":       booking.Children,
+			"check-in_date":  fromDate.Format("2006-01-02"),
+			"check-out_date": toDate.Format("2006-01-02"),
+			"check-in_time":  checkinTime,
+			"check-out_time": checkoutTime,
+			"total_price":    booking.TotalPrice,
+			"status":         "Confirmed",
+		},
 	}
 
 	c.JSON(http.StatusOK, response)
 }
 
-func GetBookingByID(bookingID int) (*models.Booking, error) {
-	var booking models.Booking
-	err := config.DB.QueryRow("SELECT * FROM bookings WHERE booking_id = ?", bookingID).Scan(
-		&booking.Booking_ID, &booking.Room_ID, &booking.Guest_ID, &booking.From_Date, &booking.To_Date,
-		&booking.Adults, &booking.Children, &booking.Check_in_Time, &booking.Check_out_Time,
-		&booking.TotalPrice, &booking.Status)
+func GetBookingByID(c *gin.Context) {
+
+	bookingid := c.Param("booking_id")
+	strbookingid, err := strconv.Atoi(bookingid)
 	if err != nil {
-		return nil, err
+		c.JSON(http.StatusBadRequest, gin.H{"Error": "Failed to convert string"})
 	}
-	return &booking, nil
+	booking, err := models.GetBooking(strbookingid)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"Error": "Failed to fetch booking"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"booking": booking})
+
 }
+
+func GetGuestBookings(c *gin.Context) {
+
+	guestID, exists := c.Get("guestid")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
+	query := `SELECT booking_id, room_id, num_of_adults, num_of_children, checkin_date, checkout_date, checkin_time, checkout_time, status, price, booking_date
+              FROM bookings WHERE guest_id = ?`
+	rows, err := config.DB.Query(query, guestID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	defer rows.Close()
+
+	// Iterate through the results and populate a slice of bookings
+	var bookings []models.Booking
+	for rows.Next() {
+		var booking models.Booking
+		if err := rows.Scan(&booking.Booking_ID, &booking.Room_ID, &booking.Adults, &booking.Children, &booking.From_Date, &booking.To_Date, &booking.Check_in_Time, &booking.Check_out_Time, &booking.Status, &booking.TotalPrice, &booking.Booking_Date); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		bookings = append(bookings, booking)
+	}
+
+	// Check for errors from iterating over rows
+	if err := rows.Err(); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Return the list of bookings as a JSON response
+	c.JSON(http.StatusOK, gin.H{"bookings": bookings})
+}
+
+// func GetBookings(c *gin.Context) {
+
+// 	guestid := c.Param("guest_id")
+
+// 	query := "select * from bookings where guest_id = ?"
+// 	var bookings []models.Booking
+// 	err := config.DB.QueryRow(query, guestid).Scan(&bookings); if err != nil {
+// 	c.JSON(http.StatusInternalServerError, gin.H{"Error": "failed to fetch bookings"})
+// }
+// return &bookings
+
+// }
 
 // var userdetails struct {
 // 	Username    string `json:"username" validate:"required"`

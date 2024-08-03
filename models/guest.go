@@ -1,15 +1,16 @@
 package models
 
 import (
-	// "Desktop/Projects/Hotel_Booking/config"
-	// "database/sql"
-	// "net/http"
+	"database/sql"
+	"net/http"
 	"time"
-	// "github.com/gin-gonic/gin"
+
+	"github.com/gin-gonic/gin"
+	"github.com/golang-jwt/jwt"
+	"github.com/google/uuid"
 )
 
 type Guest struct {
-	// ID            int       `json:"id"`
 	Guestid       string    `json:"guestid,omitempty"`
 	Guestname     string    `json:"username,omitempty"`
 	Email         string    `json:"email,omitempty"`
@@ -23,23 +24,56 @@ type Guest struct {
 	User_id       string    `json:"user_id,omitempty"`
 }
 
-// func FetchGuestDetails(c *gin.Context) (string, error) {
+type CustomClaims struct {
+	jwt.StandardClaims
+	GuestID string `json:"guestid"`
+}
 
-// 	query := `select guest_id from guest where email = ? and guest_name = ?`
-// 	var guestid string
+func RegisterGuest(db *sql.DB, GUEST Guest, c *gin.Context) error {
 
-// 	var GUEST Guest
+	query := `insert into guest (guest_id, uuid, guest_name, email, phone_number, password, updated_at, created_at) values (?,?,?,?,?,?,?,?)`
+	_, err := db.Exec(query, GUEST.Guestid, uuid.New().String(), GUEST.Guestname, GUEST.Email, GUEST.Phone_Number, GUEST.Password, GUEST.Updated_at, GUEST.Created_at)
+	return err
+}
 
-// 	err := config.DB.QueryRow(query, GUEST.Email, GUEST.Guestname).Scan(&guestid)
-// 	if err != nil {
-// 		if err == sql.ErrNoRows {
-// 			c.JSON(http.StatusInternalServerError, gin.H{"error": "No guest found with the provided email and username"})
-// 			return "", err
-// 		} else {
-// 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-// 			return "", err
-// 		}
+func GetGuestByEmail(db *sql.DB, email string) (Guest, error) {
+	var guest Guest
+	query := `SELECT guest_id, guest_name, email, phone_number, password, updated_at, created_at FROM guest WHERE email = ?`
+	err := db.QueryRow(query, email).Scan(&guest.Guestid, &guest.Guestname, &guest.Email, &guest.Phone_Number, &guest.Password, &guest.Updated_at, &guest.Created_at)
+	return guest, err
+}
 
+func FetchGuestID(db *sql.DB, GUEST Guest, c *gin.Context) (string, error) {
+
+	query := `select guest_id from guest where email = ? and guest_name = ?`
+	var guestid string
+
+	err := db.QueryRow(query, GUEST.Email, GUEST.Guestname).Scan(&guestid)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "No guest found with the provided email and username"})
+			return "", err
+		} else {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return "", err
+		}
+
+	}
+	return guestid, nil
+
+}
+
+func UpdateToken(db *sql.DB, guestid string, tokenstring string) error {
+	updateToken := `update guest set token = ? Where guest_id = ?`
+	_, err := db.Exec(updateToken, tokenstring, guestid)
+	return err
+}
+
+// func IDFetch(c *gin.Context) (string, error) {
+// 	guestID, exists := c.Get("guestid")
+// 	if !exists {
+// 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Guest ID not found"})
 // 	}
-// 	return guestid, nil
+// 	return guestID.(string), nil
+
 // }

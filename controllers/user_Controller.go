@@ -1,19 +1,18 @@
 package controllers
 
 import (
-	"net/http"
-	"time"
-
 	"Desktop/Projects/Hotel_Booking/config"
 	"Desktop/Projects/Hotel_Booking/models"
+	Utils "Desktop/Projects/Hotel_Booking/utils"
+	"fmt"
+	"net/http"
+	"time"
 
 	// "Desktop/Projects/Hotel_Booking/models"
 
 	"github.com/golang-jwt/jwt"
 
 	"database/sql"
-
-	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -112,12 +111,19 @@ func AuthMiddleware() gin.HandlerFunc {
 			return
 		}
 
-		tokenString := strings.TrimPrefix(authHeader, "Bearer ")
-		claims := &jwt.StandardClaims{}
+		// tokenString := strings.TrimPrefix(authHeader, "Bearer ")
+		// claims := &jwt.StandardClaims{}
 
-		token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
-			return jwtKey, nil
-		})
+		guestID, token, err := Utils.ExtractGuestIDFromTokenn(authHeader)
+		if err != nil {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token"})
+			c.Abort()
+			return
+		}
+
+		// token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
+		// 	return jwtKey, nil
+		// })
 
 		if err != nil || !token.Valid {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid token"})
@@ -125,7 +131,10 @@ func AuthMiddleware() gin.HandlerFunc {
 			return
 		}
 
-		c.Set("userEmail", claims.Subject)
+		// c.Set("userEmail", claims.Subject)
+		c.Set("guestid", guestID)
 		c.Next()
+
+		fmt.Println("guestid", guestID)
 	}
 }
