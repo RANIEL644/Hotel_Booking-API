@@ -1,5 +1,41 @@
 package middleware
 
+import (
+	"Desktop/Projects/Hotel_Booking/config"
+	"database/sql"
+	"net/http"
+
+	"github.com/gin-gonic/gin"
+	_ "github.com/go-sql-driver/mysql"
+)
+
+func APIKeyMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		apiKey := c.GetHeader("X-API-Key")
+		if apiKey == "" {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "API key required"})
+			c.Abort()
+			return
+		}
+
+		var userID string
+		err := config.DB.QueryRow("select user_id from users where api_key = ?").Scan(&userID)
+		if err != nil {
+			if err == sql.ErrNoRows {
+				c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid API key"})
+			} else {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Database error"})
+			}
+			c.Abort()
+			return
+		}
+
+		c.Set("UserID", userID)
+		c.Next()
+	}
+
+}
+
 // import (
 // 	"net/http"
 // 	"strings"

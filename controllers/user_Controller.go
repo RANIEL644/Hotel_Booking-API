@@ -19,20 +19,47 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-func RegisterUser(c *gin.Context) {
+type UserController struct {
+	JWTKey []byte
+}
 
-	var user struct {
-		Username    string `json:"username" validate:"required"`
-		Email       string `json:"email" validate:"required,email"`
-		PhoneNumber string `json:"phone_number" validate:"required"`
-		Password    string `json:"password" validate:"required, min=8"`
+func NewUserController() *UserController {
+	return &UserController{
+		JWTKey: []byte("your_secret_key"),
 	}
-	if err := c.ShouldBindJSON(&user); err != nil {
+}
+
+func (uc *UserController) RegisterUser(c *gin.Context) {
+	var USER models.User
+	// var user struct {
+	// 	Username    string `json:"username" validate:"required"`
+	// 	Email       string `json:"email" validate:"required,email"`
+	// 	PhoneNumber string `json:"phone_number" validate:"required"`
+	// 	Password    string `json:"password" validate:"required, min=8"`
+	// }
+
+	if err := c.ShouldBindJSON(&USER); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
+	if !isEmailValid(USER.Email) {
+
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid email format"})
+	}
+
+	valid, err := isValidPhoneNumber((USER.Phone_Number))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Error validating phone number"})
+		return
+	}
+
+	if !valid {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid phone number format"})
+		return
+	}
+
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(USER.Password), bcrypt.DefaultCost)
 
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -40,18 +67,28 @@ func RegisterUser(c *gin.Context) {
 
 	}
 
-	query := `insert INTO users (user_id, user_name, email, phone_number,updated_at, created_at, password ) values (?,?,?,?,?,?,?)`
+	userid := generateAlphanumericID()
+	USER.User_id = userid
+	USER.Password = string(hashedPassword)
+	USER.Created_at = time.Now()
+	USER.Updated_at = time.Now()
+	USER.API_Key, err = Utils.GenerateAPIKey()
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"Error": "Failed to generate API-Key"})
+	}
 
-	_, err = config.DB.Exec(query, uuid.New().String(), user.Username, user.Email, user.PhoneNumber, time.Now(), time.Now(), string(hashedPassword))
+	query := `insert INTO users (user_id, user_name, email, phone_number,updated_at, created_at, password, api_key ) values (?,?,?,?,?,?,?,?)`
+
+	_, err = config.DB.Exec(query, uuid.New().String(), USER.Username, USER.Email, USER.Phone_Number, time.Now(), time.Now(), string(hashedPassword), USER.API_Key)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "User registered successfully"})
-
+	c.JSON(http.StatusOK, gin.H{"type": "success", "message": gin.H{"message": "User registered successfully", "guest_id": USER.User_id, "username": USER.Username, "email": USER.Email}})
 }
 
+// //////////////////////////////////////////////////////////
 var jwtKey = []byte("your_secret_key")
 
 func LoginUser(c *gin.Context) {

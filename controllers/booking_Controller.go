@@ -164,7 +164,7 @@ func GetGuestBookings(c *gin.Context) {
 		return
 	}
 
-	query := `SELECT booking_id, room_id, num_of_adults, num_of_children, checkin_date, checkout_date, checkin_time, checkout_time, status, price, booking_date
+	query := `SELECT booking_id, room_id, guest_id, num_of_adults, num_of_children, checkin_date, checkout_date, checkin_time, checkout_time, status, price, booking_date
               FROM bookings WHERE guest_id = ?`
 	rows, err := config.DB.Query(query, guestID)
 	if err != nil {
@@ -177,7 +177,7 @@ func GetGuestBookings(c *gin.Context) {
 	var bookings []models.Booking
 	for rows.Next() {
 		var booking models.Booking
-		if err := rows.Scan(&booking.Booking_ID, &booking.Room_ID, &booking.Adults, &booking.Children, &booking.From_Date, &booking.To_Date, &booking.Check_in_Time, &booking.Check_out_Time, &booking.Status, &booking.TotalPrice, &booking.Booking_Date); err != nil {
+		if err := rows.Scan(&booking.Booking_ID, &booking.Room_ID, &booking.Guest_ID, &booking.Adults, &booking.Children, &booking.From_Date, &booking.To_Date, &booking.Check_in_Time, &booking.Check_out_Time, &booking.Status, &booking.TotalPrice, &booking.Booking_Date); err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}

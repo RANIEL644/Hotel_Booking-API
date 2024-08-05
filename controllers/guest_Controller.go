@@ -56,8 +56,6 @@ func (gc *GuestController) RegisterGuest(c *gin.Context) {
 		return
 	}
 
-	// alphanumericID := generateAlphanumericID()
-
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(GUEST.Password), bcrypt.DefaultCost)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -77,6 +75,8 @@ func (gc *GuestController) RegisterGuest(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"type": "success", "message": gin.H{"message": "Guest registered successfully", "guest_id": GUEST.Guestid, "username": GUEST.Guestname, "email": GUEST.Email}})
 }
+
+///////////////////////////////////////////////////////////
 
 func (gc *GuestController) LoginGuest(c *gin.Context) {
 	var guest models.Guest
